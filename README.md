@@ -13,3 +13,5 @@ Notes
 
 License
 MIT
+
+**This script will be updated with new features and improvements. Stay tuned for future releases.**
