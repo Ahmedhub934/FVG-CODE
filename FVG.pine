@@ -1,0 +1,99 @@
+//@version=6
+indicator('FVG [atrader934]', shorttitle="FVG", overlay=true, max_bars_back=5000, max_boxes_count=500, max_labels_count=500)
+// ████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
+// ██                     NOTE:                                                                                                          ██
+// ██  This script is provided for educational purposes only. It is not financial advice.                                                ██
+// ██  Trading involves significant risk. The author is not responsible for any financial losses incurred using this script.             ██
+// ██  Always conduct your own research and backtest thoroughly before trading live.                                                     ██
+// ██  There will be more updates coming.                                                                                                ██
+// ██                                                                                                                                    ██
+// ████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
+//ahmedtrader934
+// === GROUPS ===
+grpLogic    = "FVG Logic"
+grpStyle    = "Visual Style"
+grpCleanup  = "Box Removal"
+
+// === INPUTS ===
+fvgTimeframe   = input.timeframe('', "FVG Timeframe (empty=chart)", group=grpLogic, tooltip="Timeframe for FVG detection.")
+boxExtendBars  = input.int(15, "Extend FVG Boxes (bars)", minval=1, maxval=100, group=grpStyle, tooltip="How far to extend FVG boxes to the right.")
+
+bullFillColor  = input.color(color.new(#00ffe0, 75), "Bullish FVG Fill", group=grpStyle)
+bullEdgeColor  = input.color(color.new(#00d1ab, 0), "Bullish FVG Border", group=grpStyle)
+bearFillColor  = input.color(color.new(#ff4e6a, 80), "Bearish FVG Fill", group=grpStyle)
+bearEdgeColor  = input.color(color.new(#ff2042, 10), "Bearish FVG Border", group=grpStyle)
+labelTextSize  = input.string("small", "FVG Label Size", options=["tiny","small","normal","large"], group=grpStyle)
+labelBgColor   = input.color(color.new(color.black, 80), "FVG Label Bg", group=grpStyle)
+labelGlowColor = input.color(color.new(#222930, 70), "FVG Label Glow", group=grpStyle)
+autoDelete     = input.bool(true, "Auto-Delete Filled", group=grpCleanup, tooltip="Remove FVG when price fills/mitigates the gap.")
+
+// === MTF DATA ===
+srcHigh = fvgTimeframe == '' ? high : request.security(syminfo.tickerid, fvgTimeframe, high, lookahead=barmerge.lookahead_on)
+srcLow  = fvgTimeframe == '' ? low  : request.security(syminfo.tickerid, fvgTimeframe, low, lookahead=barmerge.lookahead_on)
+
+// === ARRAYS ===
+var box[] bullFvgBoxes    = array.new<box>()
+var label[] bullFvgLabels = array.new<label>()
+var box[] bearFvgBoxes    = array.new<box>()
+var label[] bearFvgLabels = array.new<label>()
+
+// === ACCURATE FVG DETECTION & VISUALS ===
+bullFvg = srcLow > srcHigh[2]
+bearFvg = srcHigh < srcLow[2]
+
+if bullFvg and not bullFvg[1]
+    left = bar_index
+    right = bar_index + boxExtendBars
+    top = srcLow
+    bottom = srcHigh[2]
+    newBox = box.new(left, top, right, bottom, bgcolor=bullFillColor, border_color=bullEdgeColor, border_width=2, xloc=xloc.bar_index, extend=extend.none)
+    centerY = (top + bottom)/2
+    centerX = math.round((left + right)/2)
+    glowLabel = label.new(centerX, centerY, "FVG", xloc=xloc.bar_index, yloc=yloc.price, style=label.style_label_center, color=labelGlowColor, textcolor=color.new(#00ffe0, 60), size=labelTextSize)
+    mainLabel = label.new(centerX, centerY, "FVG", xloc=xloc.bar_index, yloc=yloc.price, style=label.style_label_center, color=labelBgColor, textcolor=bullEdgeColor, size=labelTextSize)
+    array.unshift(bullFvgBoxes, newBox)
+    array.unshift(bullFvgLabels, mainLabel)
+    array.unshift(bullFvgLabels, glowLabel)
+
+if bearFvg and not bearFvg[1]
+    left = bar_index
+    right = bar_index + boxExtendBars
+    top = srcLow[2]
+    bottom = srcHigh
+    newBox = box.new(left, top, right, bottom, bgcolor=bearFillColor, border_color=bearEdgeColor, border_width=2, xloc=xloc.bar_index, extend=extend.none)
+    centerY = (top + bottom)/2
+    centerX = math.round((left + right)/2)
+    glowLabel = label.new(centerX, centerY, "FVG", xloc=xloc.bar_index, yloc=yloc.price, style=label.style_label_center, color=labelGlowColor, textcolor=color.new(#ff4e6a, 50), size=labelTextSize)
+    mainLabel = label.new(centerX, centerY, "FVG", xloc=xloc.bar_index, yloc=yloc.price, style=label.style_label_center, color=labelBgColor, textcolor=bearEdgeColor, size=labelTextSize)
+    array.unshift(bearFvgBoxes, newBox)
+    array.unshift(bearFvgLabels, mainLabel)
+    array.unshift(bearFvgLabels, glowLabel)
+
+// === BOX & LABEL DELETION LOGIC ===
+if autoDelete
+    if array.size(bullFvgBoxes) > 0
+        for i = array.size(bullFvgBoxes) - 1 to 0
+            boxRef = array.get(bullFvgBoxes, i)
+            mainLabelRef = array.get(bullFvgLabels, i * 2)
+            glowLabelRef = array.get(bullFvgLabels, i * 2 + 1)
+            boxBottom = box.get_bottom(boxRef)
+            if close < boxBottom
+                box.delete(boxRef)
+                label.delete(mainLabelRef)
+                label.delete(glowLabelRef)
+                array.remove(bullFvgBoxes, i)
+                array.remove(bullFvgLabels, i * 2)
+                array.remove(bullFvgLabels, i * 2)
+    if array.size(bearFvgBoxes) > 0
+        for i = array.size(bearFvgBoxes) - 1 to 0
+            boxRef = array.get(bearFvgBoxes, i)
+            mainLabelRef = array.get(bearFvgLabels, i * 2)
+            glowLabelRef = array.get(bearFvgLabels, i * 2 + 1)
+            boxTop = box.get_top(boxRef)
+            if close > boxTop
+                box.delete(boxRef)
+                label.delete(mainLabelRef)
+                label.delete(glowLabelRef)
+                array.remove(bearFvgBoxes, i)
+                array.remove(bearFvgLabels, i * 2)
+                array.remove(bearFvgLabels, i * 2)
