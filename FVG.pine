@@ -8,7 +8,7 @@ indicator('FVG [atrader934]', shorttitle="FVG", overlay=true, max_bars_back=5000
 // ██  There will be more updates coming.                                                                                                ██
 // ██                                                                                                                                    ██
 // ████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████
-//ahmedtrader934
+//atrader934
 // === GROUPS ===
 grpLogic    = "FVG Logic"
 grpStyle    = "Visual Style"
