@@ -1,0 +1,30 @@
+{
+  "name": "uhc-advocate-assistant",
+  "version": "0.1.0",
+  "description": "AI agent toolkit for UHC advocates with call flow guidance, clinical reference lookups, and STAR documentation.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node --loader ts-node/esm src/index.ts",
+    "dev": "tsx watch src/index.ts",
+    "lint": "eslint . --ext .ts"
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "cheerio": "^1.0.0-rc.12",
+    "langchain": "^0.1.30",
+    "openai": "^4.28.4",
+    "pino": "^8.17.0",
+    "string-similarity": "^4.0.4",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.7",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3"
+  }
+}
